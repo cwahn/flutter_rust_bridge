@@ -74,6 +74,10 @@ impl ApiDartGeneratorClassTrait for RustOpaqueApiDartGenerator<'_> {
         let dart_entrypoint_class_name = &self.context.config.dart_entrypoint_class_name;
         let dart_api_instance = format!("{dart_entrypoint_class_name}.instance.api");
 
+        let extra_code =
+            generate_class_extra_body(self.mir_type(), &self.context.mir_pack.dart_code_of_type);
+        let extra_body = &extra_code.body;
+
         Some(format!(
             "
             @sealed class {dart_api_type_impl} extends RustOpaque implements {dart_api_type} {{
@@ -92,6 +96,8 @@ impl ApiDartGeneratorClassTrait for RustOpaqueApiDartGenerator<'_> {
                 );
 
                 {methods_str}
+
+                {extra_body}
             }}"
         ))
     }

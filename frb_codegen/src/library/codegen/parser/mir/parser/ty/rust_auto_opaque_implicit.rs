@@ -109,7 +109,8 @@ fn parse_type_rust_auto_opaque_common_raw(
     codec: RustOpaqueCodecMode,
     dart_api_type: Option<String>,
 ) -> Result<(MirRustAutoOpaqueRaw, MirTypeRustOpaque)> {
-    let inner_str = remove_ty_path_prefix(&inner.to_token_stream().to_string());
+    // let inner_str = remove_ty_path_prefix(&inner.to_token_stream().to_string());
+    let inner_str = inner.to_token_stream().to_string();
 
     let raw_segments = match inner {
         Type::Path(inner) => extract_path_data(&inner.path)?,

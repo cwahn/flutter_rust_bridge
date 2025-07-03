@@ -241,11 +241,11 @@ fn caching_getter_modifier(methods_str: &str) -> (String, String) // modified me
         .map(|(ty, name)| {
             format!(
                 "late {ty} _{name};\n\
-                 bool _isCached{name}initialized = false;\n\n\
+                 bool _{name}Initialized = false;\n\n\
                  {ty} get {name} {{\n\
-                     if (!_isCached{name}initialized) {{\n\
+                     if (!_{name}Initialized) {{\n\
                          _{name} = {name}Impl();\n\
-                         _isCached{name}initialized = true;\n\
+                         _{name}Initialized = true;\n\
                      }}\n\
                      return _{name};\n\
                  }}"

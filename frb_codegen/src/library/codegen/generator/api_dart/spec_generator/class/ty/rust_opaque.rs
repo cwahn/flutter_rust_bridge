@@ -203,19 +203,24 @@ fn get_candidate_safe_idents_for_matching(ty: &MirType) -> Vec<String> {
 
 fn caching_getter_modifier(methods_str: &str) -> (String, String) // modified methods, caching_getter_extra
 {
-    let regex = regex::Regex::new(r"(\w+) get (\w+)=>").unwrap();
+    // let regex = regex::Regex::new(r"(\w+) get (\w+)=>").unwrap();
+    // Should keep the rest of the line
+    let regex = regex::Regex::new(r"(\w+) get (\w+)=>(.*)").unwrap();
 
     let mut getter_configs = vec![];
     let modified_methods = methods_str
         .lines()
-        .map(|line| {
+        .filter_map(|line| {
             if let Some(caps) = regex.captures(line) {
                 let ty = caps.get(1).unwrap().as_str();
                 let name = caps.get(2).unwrap().as_str();
-                getter_configs.push((ty, name));
-                format!("{ty} {name}Impl()=>")
+                getter_configs.push((ty.to_owned(), name.to_owned()));
+                Some(format!(
+                    "{ty} {name}Impl=>{}",
+                    caps.get(3).unwrap().as_str()
+                ))
             } else {
-                line.to_owned()
+                None
             }
         })
         .collect::<Vec<_>>()

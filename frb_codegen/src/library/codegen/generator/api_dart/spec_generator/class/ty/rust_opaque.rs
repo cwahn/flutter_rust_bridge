@@ -215,7 +215,7 @@ fn caching_getter_modifier(methods_str: &str) -> (String, String) // modified me
                 let ty = caps.get(1).unwrap().as_str();
                 let name = caps.get(2).unwrap().as_str();
                 if name == "id" {
-                    return None; // Skip getters named "id" for Flutter Rust Bridge
+                    return Some(line.to_owned());
                 }
                 getter_configs.push((ty.to_owned(), name.to_owned()));
                 Some(format!(

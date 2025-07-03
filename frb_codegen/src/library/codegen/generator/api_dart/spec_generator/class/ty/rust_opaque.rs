@@ -221,6 +221,15 @@ fn caching_getter_modifier(methods_str: &str) -> (String, String) // modified me
         .collect::<Vec<_>>()
         .join("\n");
 
+    println!(
+        "Found {} getters to modify for caching.\n
+        Modified methods:\n{} \n",
+        // Generated caching getters:\n{}",
+        getter_configs.len(),
+        modified_methods,
+        // caching_getter_extra
+    );
+
     let caching_getter_extra = getter_configs
         .into_iter()
         .map(|(ty, name)| {
@@ -238,6 +247,8 @@ fn caching_getter_modifier(methods_str: &str) -> (String, String) // modified me
         })
         .collect::<Vec<_>>()
         .join("\n\n");
+
+    println!("Generated caching getters:\n{}", caching_getter_extra);
 
     (modified_methods, caching_getter_extra)
 }

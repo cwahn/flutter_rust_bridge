@@ -203,11 +203,6 @@ fn get_candidate_safe_idents_for_matching(ty: &MirType) -> Vec<String> {
 
 fn caching_getter_modifier(methods_str: &str) -> (String, String) // modified methods, caching_getter_extra
 {
-    // let regex = regex::Regex::new(r"(\w+) get (\w+)=>").unwrap();
-    // Should keep the rest of the line
-    // let regex = regex::Regex::new(r"(\w+) get (\w+)=>(.*)").unwrap();
-    // There could be optional space before `=>`
-    // let regex = regex::Regex::new(r"(\w+) get (\w+)\s*=>\s*(.*)").unwrap();
     let regex = regex::Regex::new(r"(.+?)\s+get\s+(\w+)\s*=>\s*(.*)").unwrap();
 
     let mut getter_configs = vec![];
@@ -233,28 +228,20 @@ fn caching_getter_modifier(methods_str: &str) -> (String, String) // modified me
         .join("\n");
 
     // ! temp
-    if !getter_configs.is_empty() {
-        // println!(
-        //     "Found {} getters to modify for caching.\n
-        // Modified methods:\n{} \n",
-        //     // Generated caching getters:\n{}",
-        //     getter_configs.len(),
-        //     modified_methods,
-        //     // caching_getter_extra
-        // );
-        println!(
-            "Found {} getters to modify, {:#?}",
-            getter_configs.len(),
-            getter_configs
-        );
-    }
+    // if !getter_configs.is_empty() {
+    //     println!(
+    //         "Found {} getters to modify, {:#?}",
+    //         getter_configs.len(),
+    //         getter_configs
+    //     );
+    // }
 
     let caching_getter_extra = getter_configs
         .into_iter()
         .map(|(ty, name)| {
             format!(
                 "late {ty} _{name};\n\
-                 bool _isCached{name}initialized = false;\n\
+                 bool _isCached{name}initialized = false;\n\n\
                  {ty} get {name} {{\n\
                      if (!_isCached{name}initialized) {{\n\
                          _{name} = {name}Impl();\n\
@@ -268,9 +255,9 @@ fn caching_getter_modifier(methods_str: &str) -> (String, String) // modified me
         .join("\n\n");
 
     // ! temp
-    if !caching_getter_extra.is_empty() {
-        println!("Generated caching getters:\n{}", caching_getter_extra);
-    }
+    // if !caching_getter_extra.is_empty() {
+    //     println!("Generated caching getters:\n{}", caching_getter_extra);
+    // }
 
     (modified_methods, caching_getter_extra)
 }

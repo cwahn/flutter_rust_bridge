@@ -216,7 +216,7 @@ fn caching_getter_modifier(methods_str: &str) -> (String, String) // modified me
                 let name = caps.get(2).unwrap().as_str();
                 getter_configs.push((ty.to_owned(), name.to_owned()));
                 Some(format!(
-                    "{ty} {name}Impl=>{}",
+                    "{ty} {name}Impl()=>{}",
                     caps.get(3).unwrap().as_str()
                 ))
             } else {

@@ -207,7 +207,8 @@ fn caching_getter_modifier(methods_str: &str) -> (String, String) // modified me
     // Should keep the rest of the line
     // let regex = regex::Regex::new(r"(\w+) get (\w+)=>(.*)").unwrap();
     // There could be optional space before `=>`
-    let regex = regex::Regex::new(r"(\w+) get (\w+)\s*=>\s*(.*)").unwrap();
+    // let regex = regex::Regex::new(r"(\w+) get (\w+)\s*=>\s*(.*)").unwrap();
+    let regex = Regex::new(r"(.+?)\s+get\s+(\w+)\s*=>\s*(.*)").unwrap();
 
     let mut getter_configs = vec![];
     let modified_methods = methods_str

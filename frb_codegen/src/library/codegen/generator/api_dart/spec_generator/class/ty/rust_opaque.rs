@@ -203,7 +203,7 @@ fn get_candidate_safe_idents_for_matching(ty: &MirType) -> Vec<String> {
 
 fn caching_getter_modifier(methods_str: &str) -> (String, String) // modified methods, caching_getter_extra
 {
-    let regex = regex::Regex::new(r"(\w+) get (\w+) =>").unwrap();
+    let regex = regex::Regex::new(r"(\w+) get (\w+)=>").unwrap();
 
     let mut getter_configs = vec![];
     let modified_methods = methods_str
@@ -213,7 +213,7 @@ fn caching_getter_modifier(methods_str: &str) -> (String, String) // modified me
                 let ty = caps.get(1).unwrap().as_str();
                 let name = caps.get(2).unwrap().as_str();
                 getter_configs.push((ty, name));
-                format!("{ty} {name}Impl() =>")
+                format!("{ty} {name}Impl()=>")
             } else {
                 line.to_owned()
             }
@@ -221,14 +221,17 @@ fn caching_getter_modifier(methods_str: &str) -> (String, String) // modified me
         .collect::<Vec<_>>()
         .join("\n");
 
-    println!(
-        "Found {} getters to modify for caching.\n
+    // ! temp
+    if !getter_configs.is_empty() {
+        println!(
+            "Found {} getters to modify for caching.\n
         Modified methods:\n{} \n",
-        // Generated caching getters:\n{}",
-        getter_configs.len(),
-        modified_methods,
-        // caching_getter_extra
-    );
+            // Generated caching getters:\n{}",
+            getter_configs.len(),
+            modified_methods,
+            // caching_getter_extra
+        );
+    }
 
     let caching_getter_extra = getter_configs
         .into_iter()
@@ -248,7 +251,10 @@ fn caching_getter_modifier(methods_str: &str) -> (String, String) // modified me
         .collect::<Vec<_>>()
         .join("\n\n");
 
-    println!("Generated caching getters:\n{}", caching_getter_extra);
+    // ! temp
+    if !caching_getter_extra.is_empty() {
+        println!("Generated caching getters:\n{}", caching_getter_extra);
+    }
 
     (modified_methods, caching_getter_extra)
 }

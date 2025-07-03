@@ -214,13 +214,16 @@ fn caching_getter_modifier(methods_str: &str) -> (String, String) // modified me
             if let Some(caps) = regex.captures(line) {
                 let ty = caps.get(1).unwrap().as_str();
                 let name = caps.get(2).unwrap().as_str();
+                if name == "id" {
+                    return None; // Skip getters named "id" for Flutter Rust Bridge
+                }
                 getter_configs.push((ty.to_owned(), name.to_owned()));
                 Some(format!(
                     "{ty} {name}Impl()=>{}",
                     caps.get(3).unwrap().as_str()
                 ))
             } else {
-                None
+                Some(line.to_owned())
             }
         })
         .collect::<Vec<_>>()

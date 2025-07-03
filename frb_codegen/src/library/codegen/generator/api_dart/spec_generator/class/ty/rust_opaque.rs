@@ -28,6 +28,8 @@ impl ApiDartGeneratorClassTrait for RustOpaqueApiDartGenerator<'_> {
         );
         let methods_str = &methods.code;
 
+        let (modified_methods, caching_getter_extra) = caching_getter_modifier(methods_str);
+
         let rust_api_type = self.mir.rust_api_type();
 
         let extra_code =
@@ -44,7 +46,9 @@ impl ApiDartGeneratorClassTrait for RustOpaqueApiDartGenerator<'_> {
                 "
                 // Rust type: {rust_api_type}
                 abstract class {dart_api_type} implements {impl_code} {{
-                    {methods_str}
+                    {modified_methods}
+
+                    {caching_getter_extra}
 
                     {extra_body}
                 }}
@@ -68,6 +72,8 @@ impl ApiDartGeneratorClassTrait for RustOpaqueApiDartGenerator<'_> {
             "Impl",
         );
         let methods_str = &methods.code;
+
+        let (modified_methods, caching_getter_extra) = caching_getter_modifier(methods_str);
 
         let dart_api_type_impl = format!("{dart_api_type}Impl");
 
@@ -95,7 +101,9 @@ impl ApiDartGeneratorClassTrait for RustOpaqueApiDartGenerator<'_> {
                     rustArcDecrementStrongCountPtr: {dart_api_instance}.rust_arc_decrement_strong_count_{dart_api_type}Ptr,
                 );
 
-                {methods_str}
+                {modified_methods}
+
+                {caching_getter_extra}
 
                 {extra_body}
             }}"
@@ -191,4 +199,45 @@ fn get_candidate_safe_idents_for_matching(ty: &MirType) -> Vec<String> {
         _ => {}
     }
     ans
+}
+
+fn caching_getter_modifier(methods_str: &str) -> (String, String) // modified methods, caching_getter_extra
+{
+    let regex = regex::Regex::new(r"(\w+) get (\w+) =>").unwrap();
+
+    let mut getter_configs = vec![];
+    let modified_methods = methods_str
+        .lines()
+        .map(|line| {
+            if let Some(caps) = regex.captures(line) {
+                let ty = caps.get(1).unwrap().as_str();
+                let name = caps.get(2).unwrap().as_str();
+                getter_configs.push((ty, name));
+                format!("{ty} {name}Impl() =>")
+            } else {
+                line.to_owned()
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    let caching_getter_extra = getter_configs
+        .into_iter()
+        .map(|(ty, name)| {
+            format!(
+                "late {ty} _cached{name};\n\
+                 bool _isCached{name}initialized = false;\n\
+                 {ty} get {name} {{\n\
+                     if (!_isCached{name}initialized) {{\n\
+                         _cached{name} = {name}Impl();\n\
+                         _isCached{name}initialized = true;\n\
+                     }}\n\
+                     return _cached{name};\n\
+                 }}"
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n\n");
+
+    (modified_methods, caching_getter_extra)
 }

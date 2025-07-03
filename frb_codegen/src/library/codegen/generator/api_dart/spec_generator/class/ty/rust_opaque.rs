@@ -205,7 +205,9 @@ fn caching_getter_modifier(methods_str: &str) -> (String, String) // modified me
 {
     // let regex = regex::Regex::new(r"(\w+) get (\w+)=>").unwrap();
     // Should keep the rest of the line
-    let regex = regex::Regex::new(r"(\w+) get (\w+)=>(.*)").unwrap();
+    // let regex = regex::Regex::new(r"(\w+) get (\w+)=>(.*)").unwrap();
+    // There could be optional space before `=>`
+    let regex = regex::Regex::new(r"(\w+) get (\w+)\s*=>\s*(.*)").unwrap();
 
     let mut getter_configs = vec![];
     let modified_methods = methods_str
@@ -231,13 +233,18 @@ fn caching_getter_modifier(methods_str: &str) -> (String, String) // modified me
 
     // ! temp
     if !getter_configs.is_empty() {
+        // println!(
+        //     "Found {} getters to modify for caching.\n
+        // Modified methods:\n{} \n",
+        //     // Generated caching getters:\n{}",
+        //     getter_configs.len(),
+        //     modified_methods,
+        //     // caching_getter_extra
+        // );
         println!(
-            "Found {} getters to modify for caching.\n
-        Modified methods:\n{} \n",
-            // Generated caching getters:\n{}",
+            "Found {} getters to modify, {:#?}",
             getter_configs.len(),
-            modified_methods,
-            // caching_getter_extra
+            getter_configs
         );
     }
 

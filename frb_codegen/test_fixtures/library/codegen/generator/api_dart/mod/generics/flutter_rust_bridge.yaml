@@ -1,0 +1,10 @@
+rust_input:
+  - src/api.rs
+
+dart_output:
+  - lib/src/rust/frb_generated.dart
+
+rust_output:
+  - src/frb_generated.rs
+
+rust_root: src/lib.rs

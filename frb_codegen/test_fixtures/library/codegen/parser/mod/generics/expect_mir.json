@@ -2,8 +2,8 @@
   "dart_code_of_type": {},
   "enum_pool": {
     "crate::api/MyGenericEnum": {
-      "comments": [],
-      "ignore": true,
+            "comments": [],
+            "ignore": false,
       "mode": "Complex",
       "name": "crate::api/MyGenericEnum",
       "needs_json_serializable": false,
@@ -679,7 +679,7 @@
       ],
       "generate_eq": true,
       "generate_hash": true,
-      "ignore": true,
+      "ignore": false,
       "is_fields_named": true,
       "name": "crate::api/MyGenericStruct",
       "needs_json_serializable": false,

@@ -2,28 +2,28 @@ use crate::codegen::generator::acc::Acc;
 use crate::codegen::generator::misc::target::Target;
 use crate::codegen::generator::wire::dart::spec_generator::codec::cst::base::*;
 use crate::codegen::ir::mir::field::MirField;
-use crate::codegen::ir::mir::ty::enumeration::{MirEnumVariant, MirVariantKind};
+use crate::codegen::ir::mir::ty::enumeration::{MirEnumVariant, MirVariant};
 use crate::codegen::generator::wire::dart::spec_generator::codec::cst::encoder::ty::WireDartCodecCstGeneratorEncoderTrait;
-use crate::codegen::generator::wire::dart::spec_generator::codec::cst::encoder::misc::dart_wire_type_from_rust_wire_type_or_web;
+use crate::codegen::ir::mir::ty::generic::MirTypeGeneric;
 use crate::codegen::ir::mir::ty::MirType;
 
 impl WireDartCodecCstGeneratorEncoderTrait for GenericWireDartCodecCstGenerator<'_> {
     fn generate_encode_func_body(&self) -> Acc<Option<String>> {
-        match &*self.mir.base_type {
-            MirType::StructRef(struct_ref) => {
-                let struct_data = struct_ref.get(self.context.mir_pack);
-                self.generate_encode_func_body_struct(&struct_data.fields)
+        match &self.mir {
+            MirTypeGeneric::Struct(struct_ref) => {
+                self.generate_encode_func_body_struct(&struct_ref.fields)
             },
-            MirType::EnumRef(enum_ref) => {
-                let enum_data = enum_ref.get(self.context.mir_pack);
-                self.generate_encode_func_body_enum(&enum_data.variants)
+            MirTypeGeneric::Enum(enum_ref) => {
+                self.generate_encode_func_body_enum(&enum_ref.variants)
             },
-            _ => Acc::default(),
         }
     }
 
     fn dart_wire_type(&self, target: Target) -> String {
-        dart_wire_type_from_rust_wire_type_or_web(self, target, "JSAny".into())
+        match target {
+            Target::Io => format!("ffi.Pointer<wire_{}>", self.context.mir_pack().get_struct_ref_str(&MirType::Generic(self.mir.clone()))),
+            Target::Web => "JSAny".to_string(),
+        }
     }
 }
 
@@ -32,7 +32,7 @@ impl GenericWireDartCodecCstGenerator<'_> {
         let field_encoders = fields
             .iter()
             .enumerate()
-            .map(|(_index, field)| {
+            .map(|(index, field)| {
                 let field_name = &field.name.rust_style(false);
                 format!(
                     "ans.ref.{} = {};",
@@ -43,8 +43,7 @@ impl GenericWireDartCodecCstGenerator<'_> {
             .collect::<Vec<_>>()
             .join("\n  ");
 
-        // Use a simpler approach for the struct name
-        let struct_name = format!("generic_struct_{}", self.mir.type_parameters.join("_"));
+        let struct_name = self.context.mir_pack().get_struct_ref_str(&MirType::Generic(self.mir.clone()));
         Acc {
             io: Some(format!(
                 r#"final ans = inner.new_{}();
@@ -74,18 +73,23 @@ impl GenericWireDartCodecCstGenerator<'_> {
             .map(|(index, variant)| {
                 let variant_name = &variant.name.rust_style(false);
                 match &variant.kind {
-                    MirVariantKind::Value => {
+                    MirVariant::Value => {
                         format!(
-                            "EnumVariant.{} => inner.new_enum_variant_{}()",
-                            variant_name, index
+                            "{}.{} => inner.new_{}_{}_{}()",
+                            self.context.mir_pack().get_struct_ref_str(&MirType::Generic(self.mir.clone())),
+                            variant_name,
+                            self.context.mir_pack().get_struct_ref_str(&MirType::Generic(self.mir.clone())).to_lowercase(),
+                            variant_name.to_lowercase(),
+                            index
                         )
                     },
-                    MirVariantKind::Struct(st) => {
+                    MirVariant::Struct(st) => {
                         let field_assigns = st.fields.iter()
                             .map(|field| {
                                 let field_name = &field.name.rust_style(false);
                                 format!(
-                                    "ans.ref.{} = {};",
+                                    "ans.ref.field{}.ref.{} = {};",
+                                    index,
                                     field_name,
                                     self.generate_field_encoder(&field.ty, field_name)
                                 )
@@ -94,12 +98,47 @@ impl GenericWireDartCodecCstGenerator<'_> {
                             .join("\n      ");
                         
                         format!(
-                            r#"EnumVariant.{}(obj) => {{
-      final ans = inner.new_enum_variant_{}();
+                            r#"{}.{}(obj) => {{
+      final ans = inner.new_{}_{}_{}_{}();
       {}
       return ans;
     }}"#,
-                            variant_name, index, field_assigns
+                            self.context.mir_pack().get_struct_ref_str(&MirType::Generic(self.mir.clone())),
+                            variant_name,
+                            self.context.mir_pack().get_struct_ref_str(&MirType::Generic(self.mir.clone())),
+                            self.context.mir_pack().get_struct_ref_str(&MirType::Generic(self.mir.clone())).to_lowercase(),
+                            variant_name,
+                            index,
+                            field_assigns
+                        )
+                    },
+                    MirVariant::Tuple(tp) => {
+                        let field_assigns = tp.fields.iter()
+                            .enumerate()
+                            .map(|(field_index, field)| {
+                                format!(
+                                    "ans.ref.field{}.ref.field{} = {};",
+                                    index,
+                                    field_index,
+                                    self.generate_field_encoder(&field.ty, &format!("obj.field{}", field_index))
+                                )
+                            })
+                            .collect::<Vec<_>>()
+                            .join("\n      ");
+                        
+                        format!(
+                            r#"{}.{}(obj) => {{
+      final ans = inner.new_{}_{}_{}_{}();
+      {}
+      return ans;
+    }}"#,
+                            self.context.mir_pack().get_struct_ref_str(&MirType::Generic(self.mir.clone())),
+                            variant_name,
+                            self.context.mir_pack().get_struct_ref_str(&MirType::Generic(self.mir.clone())),
+                            self.context.mir_pack().get_struct_ref_str(&MirType::Generic(self.mir.clone())).to_lowercase(),
+                            variant_name,
+                            index,
+                            field_assigns
                         )
                     },
                 }
@@ -121,7 +160,7 @@ impl GenericWireDartCodecCstGenerator<'_> {
         }
     }
 
-    fn generate_field_encoder(&self, _field_type: &MirType, field_name: &str) -> String {
+    fn generate_field_encoder(&self, field_type: &MirType, field_name: &str) -> String {
         // This should delegate to the appropriate encoder based on field type
         format!("{}.cstEncode()", field_name)
     }
@@ -130,7 +169,7 @@ impl GenericWireDartCodecCstGenerator<'_> {
 impl WireDartCodecCstGeneratorEncoderTrait for GenericRefWireDartCodecCstGenerator<'_> {
     fn generate_encode_func_body(&self) -> Acc<Option<String>> {
         let base_generator = GenericWireDartCodecCstGenerator::new(
-            self.mir.generic_type.as_ref().clone(),
+            self.mir.inner.clone(),
             self.context,
         );
         base_generator.generate_encode_func_body()
@@ -138,7 +177,7 @@ impl WireDartCodecCstGeneratorEncoderTrait for GenericRefWireDartCodecCstGenerat
 
     fn dart_wire_type(&self, target: Target) -> String {
         let base_generator = GenericWireDartCodecCstGenerator::new(
-            self.mir.generic_type.as_ref().clone(),
+            self.mir.inner.clone(),
             self.context,
         );
         base_generator.dart_wire_type(target)

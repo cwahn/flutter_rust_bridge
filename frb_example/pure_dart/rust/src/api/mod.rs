@@ -28,6 +28,7 @@ pub mod event_listener;
 pub mod exception;
 pub mod external_impl;
 pub mod external_type_in_crate;
+pub mod generics;
 pub mod impl_trait;
 pub mod inside_macro;
 pub mod lifetimeable;

@@ -48,6 +48,10 @@ impl TypeParserWithContext<'_, '_, '_> {
                     PrimitiveList(_) | GeneralList(_) | Boxed(_) | Dynamic(_) | Delegate(_) => {
                         MirTypeOptional::new(inner.clone())
                     }
+                    // Generic types - assume they need boxing
+                    MirType::Generic(_) | MirType::GenericRef(_) => {
+                        MirTypeOptional::new_with_boxed_wrapper(inner.clone())
+                    }
                     // frb-coverage:ignore-start
                     Optional(_) | MirType::TraitDef(_) => unreachable!(),
                     // frb-coverage:ignore-end

@@ -161,6 +161,34 @@ impl ApiDartGeneratorInfoTrait for GeneralListApiDartGenerator<'_> {
     }
 }
 
+impl ApiDartGeneratorInfoTrait for GenericApiDartGenerator<'_> {
+    fn dart_api_type(&self) -> String {
+        let base_name = match &*self.mir.base_type {
+            MirType::StructRef(struct_ref) => struct_ref.ident.0.name.to_string(),
+            MirType::EnumRef(enum_ref) => enum_ref.ident.0.name.to_string(),
+            _ => panic!("Generic base type must be StructRef or EnumRef"),
+        };
+        let type_params = self.mir.type_parameters.join(", ");
+        format!("{}<{}>", base_name, type_params)
+    }
+}
+
+impl ApiDartGeneratorInfoTrait for GenericRefApiDartGenerator<'_> {
+    fn dart_api_type(&self) -> String {
+        let base_name = match &*self.mir.generic_type.base_type {
+            MirType::StructRef(struct_ref) => struct_ref.ident.0.name.to_string(),
+            MirType::EnumRef(enum_ref) => enum_ref.ident.0.name.to_string(),
+            _ => panic!("Generic base type must be StructRef or EnumRef"),
+        };
+        let type_args = self.mir.type_arguments
+            .iter()
+            .map(|arg| ApiDartGenerator::new(arg.clone(), self.context).dart_api_type())
+            .collect::<Vec<_>>()
+            .join(", ");
+        format!("{}<{}>", base_name, type_args)
+    }
+}
+
 impl ApiDartGeneratorInfoTrait for OptionalApiDartGenerator<'_> {
     fn dart_api_type(&self) -> String {
         let inner = ApiDartGenerator::new(self.mir.inner.clone(), self.context);

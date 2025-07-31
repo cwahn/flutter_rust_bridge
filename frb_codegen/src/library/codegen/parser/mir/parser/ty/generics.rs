@@ -12,8 +12,17 @@ pub(crate) fn parse_generics_info(generics: &syn::Generics) -> GenericsInfo {
         )
         .collect_vec();
 
+    let type_params = (generics.params.iter())
+        .filter_map(
+            |param| if_then_some!(let syn::GenericParam::Type(inner) = param, inner.to_owned()),
+        )
+        .collect_vec();
+
     if lifetime_params.len() == generics.params.len() {
         GenericsInfo::LifetimeOnly
+    } else if type_params.len() > 0 && (lifetime_params.len() + type_params.len() == generics.params.len()) {
+        // Has type parameters (and possibly lifetimes)
+        GenericsInfo::TypeParameters(type_params)
     } else {
         GenericsInfo::Unsupported
     }
@@ -22,6 +31,7 @@ pub(crate) fn parse_generics_info(generics: &syn::Generics) -> GenericsInfo {
 pub(crate) enum GenericsInfo {
     Empty,
     LifetimeOnly,
+    TypeParameters(Vec<syn::TypeParam>),
     Unsupported,
 }
 
@@ -32,6 +42,7 @@ pub(crate) fn should_ignore_because_generics(
     match parse_generics_info(generics) {
         GenericsInfo::Empty => false,
         GenericsInfo::LifetimeOnly => !enable_lifetime,
+        GenericsInfo::TypeParameters(_) => false, // Don't ignore types with generic parameters
         GenericsInfo::Unsupported => true,
     }
 }

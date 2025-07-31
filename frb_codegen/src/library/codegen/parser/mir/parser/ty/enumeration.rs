@@ -6,15 +6,17 @@ use crate::codegen::ir::mir::ty::delegate::{MirTypeDelegate, MirTypeDelegatePrim
 use crate::codegen::ir::mir::ty::enumeration::{
     MirEnum, MirEnumIdent, MirEnumMode, MirEnumVariant, MirTypeEnumRef, MirVariantKind,
 };
+use crate::codegen::ir::mir::ty::generic::{MirTypeGeneric, TypeConstraint};
 use crate::codegen::ir::mir::ty::primitive::MirTypePrimitive;
 use crate::codegen::ir::mir::ty::rust_auto_opaque_implicit::MirTypeRustAutoOpaqueImplicitReason;
 use crate::codegen::ir::mir::ty::structure::MirStruct;
 use crate::codegen::ir::mir::ty::MirType;
-use crate::codegen::ir::mir::ty::MirType::{Delegate, EnumRef};
+use crate::codegen::ir::mir::ty::MirType::{Delegate, EnumRef, Generic};
 use crate::codegen::parser::mir::parser::attribute::FrbAttributes;
 use crate::codegen::parser::mir::parser::ty::enum_or_struct::{
     parse_struct_or_enum_should_ignore, EnumOrStructParser, EnumOrStructParserInfo,
 };
+use crate::codegen::parser::mir::parser::ty::generics::{parse_generics_info, GenericsInfo};
 use crate::codegen::parser::mir::parser::ty::misc::parse_comments;
 use crate::codegen::parser::mir::parser::ty::structure::structure_compute_default_opaque;
 use crate::codegen::parser::mir::parser::ty::unencodable::SplayedSegment;
@@ -175,25 +177,62 @@ impl EnumOrStructParser<MirEnumIdent, MirEnum, ItemEnum>
     }
 
     fn construct_output(&self, ident: MirEnumIdent) -> anyhow::Result<MirType> {
+        let src_enum = self.0.inner.src_enums.get(&ident.0.name)
+            .ok_or_else(|| anyhow::anyhow!("Enum not found: {}", ident.0.name))?;
+        
+        let generics_info = parse_generics_info(&src_enum.src.generics);
+        
         let enum_ref = MirTypeEnumRef {
             ident: ident.clone(),
             is_exception: false,
         };
         let enu = self.0.inner.enum_parser_info.object_pool.get(&ident);
 
-        Ok(
-            if enu.map(|e| e.mode == MirEnumMode::Complex).unwrap_or(true) {
-                EnumRef(enum_ref)
-            } else {
-                Delegate(MirTypeDelegate::PrimitiveEnum(
-                    MirTypeDelegatePrimitiveEnum {
-                        mir: enum_ref,
-                        // TODO(Desdaemon): Parse #[repr] from enum
-                        repr: MirTypePrimitive::I32,
-                    },
-                ))
-            },
-        )
+        let base_type = if enu.map(|e| e.mode == MirEnumMode::Complex).unwrap_or(true) {
+            EnumRef(enum_ref)
+        } else {
+            Delegate(MirTypeDelegate::PrimitiveEnum(
+                MirTypeDelegatePrimitiveEnum {
+                    mir: enum_ref,
+                    // TODO(Desdaemon): Parse #[repr] from enum
+                    repr: MirTypePrimitive::I32,
+                },
+            ))
+        };
+
+        match generics_info {
+            GenericsInfo::TypeParameters(type_params) => {
+                // Create a generic type
+                let type_parameters = type_params.iter()
+                    .map(|param| param.ident.to_string())
+                    .collect();
+                
+                let constraints = type_params.iter()
+                    .filter_map(|param| {
+                        if param.bounds.is_empty() {
+                            None
+                        } else {
+                            Some(TypeConstraint {
+                                param: param.ident.to_string(),
+                                bounds: param.bounds.iter()
+                                    .map(|bound| format!("{}", quote::quote!(#bound)))
+                                    .collect(),
+                            })
+                        }
+                    })
+                    .collect();
+                
+                Ok(Generic(MirTypeGeneric {
+                    base_type: Box::new(base_type),
+                    type_parameters,
+                    constraints,
+                }))
+            }
+            _ => {
+                // Create a regular (non-generic) enum
+                Ok(base_type)
+            }
+        }
     }
 
     fn src_objects(&self) -> &HashMap<String, &HirFlatEnum> {

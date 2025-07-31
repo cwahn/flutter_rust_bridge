@@ -27,6 +27,8 @@ pub fn is_js_value(ty: &MirType) -> bool {
         MirType::Delegate(inner) => is_js_value(&inner.get_delegate()),
         MirType::Optional(inner) => is_js_value(&inner.inner),
         MirType::Primitive(_) | MirType::PrimitiveList(_) => false,
+        // Generic types - assume they might be JS values
+        MirType::Generic(_) | MirType::GenericRef(_) => true,
         // frb-coverage:ignore-start
         MirType::Dynamic(_) | MirType::TraitDef(_) => unreachable!(),
         // frb-coverage:ignore-end

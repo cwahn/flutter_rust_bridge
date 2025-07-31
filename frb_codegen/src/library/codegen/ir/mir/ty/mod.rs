@@ -5,6 +5,8 @@ pub(crate) mod delegate;
 pub(crate) mod dynamic;
 pub(crate) mod enumeration;
 pub(crate) mod general_list;
+pub(crate) mod generic;
+pub(crate) mod generic_ref;
 pub(crate) mod optional;
 pub(crate) mod primitive;
 pub(crate) mod primitive_list;
@@ -35,6 +37,8 @@ pub enum MirType {
     Dynamic(dynamic::MirTypeDynamic),
     EnumRef(enumeration::MirTypeEnumRef),
     GeneralList(general_list::MirTypeGeneralList),
+    Generic(generic::MirTypeGeneric),
+    GenericRef(generic_ref::MirTypeGenericRef),
     Optional(optional::MirTypeOptional),
     Primitive(primitive::MirTypePrimitive),
     PrimitiveList(primitive_list::MirTypePrimitiveList),
@@ -144,6 +148,8 @@ impl Serialize for MirType {
             MirType::Dynamic(inner) => ser::<S, _>(&mut state, "Dynamic", inner),
             MirType::EnumRef(inner) => ser::<S, _>(&mut state, "EnumRef", inner),
             MirType::GeneralList(inner) => ser::<S, _>(&mut state, "GeneralList", inner),
+            MirType::Generic(inner) => ser::<S, _>(&mut state, "Generic", inner),
+            MirType::GenericRef(inner) => ser::<S, _>(&mut state, "GenericRef", inner),
             MirType::Optional(inner) => ser::<S, _>(&mut state, "Optional", inner),
             MirType::Primitive(inner) => ser::<S, _>(&mut state, "Primitive", inner),
             MirType::PrimitiveList(inner) => ser::<S, _>(&mut state, "PrimitiveList", inner),

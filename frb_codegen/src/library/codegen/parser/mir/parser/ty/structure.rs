@@ -1,14 +1,16 @@
 use crate::codegen::ir::hir::flat::struct_or_enum::HirFlatStruct;
 use crate::codegen::ir::mir::field::{MirField, MirFieldSettings};
 use crate::codegen::ir::mir::ident::MirIdent;
+use crate::codegen::ir::mir::ty::generic::{MirTypeGeneric, TypeConstraint};
 use crate::codegen::ir::mir::ty::rust_auto_opaque_implicit::MirTypeRustAutoOpaqueImplicitReason;
 use crate::codegen::ir::mir::ty::structure::{MirStruct, MirStructIdent, MirTypeStructRef};
 use crate::codegen::ir::mir::ty::MirType;
-use crate::codegen::ir::mir::ty::MirType::StructRef;
+use crate::codegen::ir::mir::ty::MirType::{Generic, StructRef};
 use crate::codegen::parser::mir::parser::attribute::FrbAttributes;
 use crate::codegen::parser::mir::parser::ty::enum_or_struct::{
     parse_struct_or_enum_should_ignore, EnumOrStructParser, EnumOrStructParserInfo,
 };
+use crate::codegen::parser::mir::parser::ty::generics::{parse_generics_info, GenericsInfo};
 use crate::codegen::parser::mir::parser::ty::misc::parse_comments;
 use crate::codegen::parser::mir::parser::ty::unencodable::SplayedSegment;
 use crate::codegen::parser::mir::parser::ty::{TypeParserParsingContext, TypeParserWithContext};
@@ -125,10 +127,52 @@ impl EnumOrStructParser<MirStructIdent, MirStruct, ItemStruct>
     }
 
     fn construct_output(&self, ident: MirStructIdent) -> anyhow::Result<MirType> {
-        Ok(StructRef(MirTypeStructRef {
-            ident,
-            is_exception: false,
-        }))
+        let src_struct = self.0.inner.src_structs.get(&ident.0.name)
+            .ok_or_else(|| anyhow::anyhow!("Struct not found: {}", ident.0.name))?;
+        
+        let generics_info = parse_generics_info(&src_struct.src.generics);
+        
+        match generics_info {
+            GenericsInfo::TypeParameters(type_params) => {
+                // Create a generic type
+                let base_type = Box::new(StructRef(MirTypeStructRef {
+                    ident,
+                    is_exception: false,
+                }));
+                
+                let type_parameters = type_params.iter()
+                    .map(|param| param.ident.to_string())
+                    .collect();
+                
+                let constraints = type_params.iter()
+                    .filter_map(|param| {
+                        if param.bounds.is_empty() {
+                            None
+                        } else {
+                            Some(TypeConstraint {
+                                param: param.ident.to_string(),
+                                bounds: param.bounds.iter()
+                                    .map(|bound| format!("{}", quote::quote!(#bound)))
+                                    .collect(),
+                            })
+                        }
+                    })
+                    .collect();
+                
+                Ok(Generic(MirTypeGeneric {
+                    base_type,
+                    type_parameters,
+                    constraints,
+                }))
+            }
+            _ => {
+                // Create a regular (non-generic) struct
+                Ok(StructRef(MirTypeStructRef {
+                    ident,
+                    is_exception: false,
+                }))
+            }
+        }
     }
 
     fn src_objects(&self) -> &HashMap<String, &HirFlatStruct> {

@@ -11,7 +11,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  FRB_MAIN_RUST_VERSION: 1.84.0
+  FRB_MAIN_RUST_VERSION: 1.86.0
   FRB_MAIN_DART_VERSION: 3.6.2
   FRB_MAIN_FLUTTER_VERSION: 3.27.4
 
@@ -19,6 +19,7 @@ jobs:
   test_mimic_quickstart:
     name: 'Test :: MimicQuickstart'
     runs-on: ${{ matrix.image }}
+    if: github.repository_owner == 'fzyzcjy'
     strategy:
       fail-fast: false
       matrix:

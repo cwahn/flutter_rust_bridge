@@ -43,6 +43,7 @@ impl CodecSseTyTrait for DelegateCodecSseTy<'_> {
                 MirTypeDelegate::StreamSink(mir) => {
                     generate_stream_sink_setup_and_serialize(mir, "self")
                 }
+                MirTypeDelegate::ActorRef(_) => "self.id.toBytes()".to_owned(),
                 MirTypeDelegate::BigPrimitive(_) => "self.toString()".to_owned(),
                 MirTypeDelegate::CastedPrimitive(mir) => {
                     let postfix = match mir.inner {
@@ -104,6 +105,7 @@ impl CodecSseTyTrait for DelegateCodecSseTy<'_> {
                 },
                 MirTypeDelegate::Uuid => "self.as_bytes().to_vec()".to_owned(),
                 MirTypeDelegate::StreamSink(_) => return Some(lang.throw_unimplemented("")),
+                MirTypeDelegate::ActorRef(_) => "self.id().as_bytes().to_vec()".to_owned(),
                 MirTypeDelegate::BigPrimitive(_) => "self.to_string()".to_owned(),
                 MirTypeDelegate::RustAutoOpaqueExplicit(_ir) => {
                     "flutter_rust_bridge::for_generated::rust_auto_opaque_explicit_encode(self)"
@@ -168,6 +170,7 @@ impl CodecSseTyTrait for DelegateCodecSseTy<'_> {
                         }
                     },
                     MirTypeDelegate::Uuid => "UuidValue.fromByteList(inner)".to_owned(),
+                    MirTypeDelegate::ActorRef(_) => "ActorRef.fromId(UuidValue.fromByteList(inner))".to_owned(),
                     MirTypeDelegate::StreamSink(_)
                     | MirTypeDelegate::ProxyVariant(_)
                     | MirTypeDelegate::ProxyEnum(_) => {
@@ -218,6 +221,9 @@ impl CodecSseTyTrait for DelegateCodecSseTy<'_> {
                 }
                 MirTypeDelegate::Uuid => {
                     r#"uuid::Uuid::from_slice(&inner).expect("fail to decode uuid")"#.to_owned()
+                }
+                MirTypeDelegate::ActorRef(_) => {
+                    r#"theta::actor_ref::ActorRef::from_id(uuid::Uuid::from_slice(&inner).expect("fail to decode uuid"))"#.to_owned()
                 }
                 MirTypeDelegate::StreamSink(_) => "StreamSink::deserialize(inner)".to_owned(),
                 MirTypeDelegate::BigPrimitive(_) => "inner.parse().unwrap()".to_owned(),

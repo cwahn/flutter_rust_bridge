@@ -3,7 +3,7 @@ use crate::codegen::ir::mir::func::MirFuncOwnerInfo;
 use crate::codegen::ir::mir::ty::boxed::MirTypeBoxed;
 use crate::codegen::ir::mir::ty::dart_opaque::MirTypeDartOpaque;
 use crate::codegen::ir::mir::ty::delegate::{
-    MirTypeDelegate, MirTypeDelegateMap, MirTypeDelegateSet, MirTypeDelegateStreamSink,
+    MirTypeDelegate, MirTypeDelegateActorRef, MirTypeDelegateMap, MirTypeDelegateSet, MirTypeDelegateStreamSink,
     MirTypeDelegateTime,
 };
 use crate::codegen::ir::mir::ty::dynamic::MirTypeDynamic;
@@ -89,6 +89,10 @@ impl TypeParserWithContext<'_, '_, '_> {
                 inner_ok: Box::new(self.parse_type(inner)?),
                 inner_err: stream_sink_err_type(),
                 codec: parse_stream_sink_codec(codec)?,
+            })),
+
+            ("ActorRef", [inner]) => Delegate(MirTypeDelegate::ActorRef(MirTypeDelegateActorRef {
+                inner: Box::new(self.parse_type(inner)?),
             })),
 
             _ => return Ok(None),

@@ -94,6 +94,11 @@ impl WireRustCodecCstGeneratorDecoderTrait for DelegateWireRustCodecCstGenerator
                 io: Some("let raw: String = self.cst_decode(); StreamSink::deserialize(raw)".into()),
                 ..Default::default()
             },
+            MirTypeDelegate::ActorRef(_) => Acc {
+                web: Some("theta::actor_ref::ActorRef::from_id(uuid::Uuid::from_slice(self.as_string().expect(\"should be a string\").as_bytes()).expect(\"fail to decode uuid\"))".into()),
+                io: Some("let raw: Vec<u8> = self.cst_decode(); theta::actor_ref::ActorRef::from_id(uuid::Uuid::from_slice(&raw).expect(\"fail to decode uuid\"))".into()),
+                ..Default::default()
+            },
             MirTypeDelegate::BigPrimitive(_) => Acc::distribute(
                 Some(
                     "CstDecode::<String>::cst_decode(self).parse().unwrap()".into(),
@@ -147,6 +152,7 @@ impl WireRustCodecCstGeneratorDecoderTrait for DelegateWireRustCodecCstGenerator
             MirTypeDelegate::Map(mir) => generate_decode_map(mir).into(),
             MirTypeDelegate::Set(mir) => generate_decode_set(mir).into(),
             MirTypeDelegate::StreamSink(_) => "StreamSink::deserialize(self.as_string().expect(\"should be a string\"))".into(),
+            MirTypeDelegate::ActorRef(_) => "theta::actor_ref::ActorRef::from_id(uuid::Uuid::from_slice(self.as_string().expect(\"should be a string\").as_bytes()).expect(\"fail to decode uuid\"))".into(),
             MirTypeDelegate::BigPrimitive(_) => "CstDecode::<String>::cst_decode(self).parse().unwrap()".into(),
             MirTypeDelegate::RustAutoOpaqueExplicit(_) =>
                 "flutter_rust_bridge::for_generated::rust_auto_opaque_explicit_decode(self.cst_decode())".into(),

@@ -112,7 +112,7 @@ impl CodecSseTyTrait for DelegateCodecSseTy<'_> {
                     match lang {
                         Lang::DartLang(_) => "frbOpaqueHandle".to_owned(),
                         Lang::RustLang(_) => {
-                            "flutter_rust_bridge::for_generated::rust_auto_opaque_encode(self)"
+                            "flutter_rust_bridge::for_generated::rust_auto_opaque_encode(self) as usize"
                                 .to_owned()
                         }
                     }
@@ -239,7 +239,7 @@ impl CodecSseTyTrait for DelegateCodecSseTy<'_> {
                     r#"uuid::Uuid::from_slice(&inner).expect("fail to decode uuid")"#.to_owned()
                 }
                 MirTypeDelegate::ActorRef(_) => {
-                    "flutter_rust_bridge::for_generated::rust_auto_opaque_decode_owned(sse_decode_usize(deserializer))".to_owned()
+                    "flutter_rust_bridge::for_generated::rust_auto_opaque_decode_owned(inner as usize)".to_owned()
                 }
                 MirTypeDelegate::StreamSink(_) => "StreamSink::deserialize(inner)".to_owned(),
                 MirTypeDelegate::BigPrimitive(_) => "inner.parse().unwrap()".to_owned(),

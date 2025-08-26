@@ -71,9 +71,6 @@ impl WireDartCodecDcoGeneratorDecoderTrait for DelegateWireDartCodecDcoGenerator
             MirTypeDelegate::Uuid => {
                 "return UuidValue.fromByteList(dco_decode_list_prim_u_8_strict(raw));".to_owned()
             }
-            MirTypeDelegate::ActorRef(_) => {
-                "return ActorRef.fromId(UuidValue.fromByteList(dco_decode_list_prim_u_8_strict(raw)));".to_owned()
-            }
             // MirTypeDelegate::Uuids => ...,
             MirTypeDelegate::AnyhowException => "return AnyhowException(raw as String);".to_owned(),
             MirTypeDelegate::Map(_) => format!(
@@ -89,6 +86,10 @@ impl WireDartCodecDcoGeneratorDecoderTrait for DelegateWireDartCodecDcoGenerator
                 "return BigInt.parse(raw);".to_owned()
             }
             MirTypeDelegate::RustAutoOpaqueExplicit(mir) => format!(r"return dco_decode_{}(raw);", mir.inner.safe_ident()),
+            MirTypeDelegate::ActorRef(mir) => {
+                let inner_type = ApiDartGenerator::new(*mir.inner.clone(), self.context.as_api_dart_context()).dart_api_type();
+                format!("return ActorRef<{}>.fromOpaqueHandle(dco_decode_usize(raw).toInt());", inner_type)
+            }
             MirTypeDelegate::ProxyVariant(_)
             | MirTypeDelegate::ProxyEnum(_)
             | MirTypeDelegate::CastedPrimitive(_)

@@ -6,13 +6,15 @@ use crate::codegen::generator::api_dart::spec_generator::class::{
     proxy_variant, ApiDartGeneratedClass,
 };
 use crate::codegen::ir::mir::ty::delegate::{
-    MirTypeDelegate, MirTypeDelegateArray, MirTypeDelegateArrayMode, MirTypeDelegatePrimitiveEnum,
+    MirTypeDelegate, MirTypeDelegateActorRef, MirTypeDelegateArray, MirTypeDelegateArrayMode, MirTypeDelegatePrimitiveEnum,
     MirTypeDelegateProxyVariant,
 };
 use crate::codegen::ir::mir::ty::MirType;
 use crate::library::codegen::generator::api_dart::spec_generator::base::*;
 use crate::library::codegen::generator::api_dart::spec_generator::info::ApiDartGeneratorInfoTrait;
+use crate::library::codegen::ir::mir::ty::MirTypeTrait;
 use crate::utils::basic_code::dart_header_code::DartHeaderCode;
+use crate::utils::namespace::Namespace;
 
 impl ApiDartGeneratorClassTrait for DelegateApiDartGenerator<'_> {
     fn generate_class(&self) -> Option<ApiDartGeneratedClass> {
@@ -21,6 +23,7 @@ impl ApiDartGeneratorClassTrait for DelegateApiDartGenerator<'_> {
                 EnumRefApiDartGenerator::new(mir.clone(), self.context).generate_class()
             }
             MirTypeDelegate::Array(array) => generate_array(array, self.context),
+            MirTypeDelegate::ActorRef(mir) => generate_actor_ref(mir, self.context),
             _ => None,
         }
     }
@@ -111,4 +114,41 @@ fn generate_proxy_variant(
             {methods_str}
         }}"
     )
+}
+
+fn generate_actor_ref(
+    mir: &MirTypeDelegateActorRef,
+    context: ApiDartGeneratorContext,
+) -> Option<ApiDartGeneratedClass> {
+    let inner_type = ApiDartGenerator::new(*mir.inner.clone(), context).dart_api_type();
+    let class_name = format!("ActorRef<{}>", inner_type);
+    
+    Some(ApiDartGeneratedClass {
+        header: DartHeaderCode::default(),
+        namespace: Namespace::default(),
+        class_name: class_name.clone(),
+        code: format!(
+            r#"// ActorRef delegate class for opaque handle management
+class {class_name} implements FrbOpaque {{
+  final int frbOpaqueHandle;
+  
+  const {class_name}._(this.frbOpaqueHandle);
+  
+  // Create from opaque handle (used by SSE decoder)
+  factory {class_name}._frbInternalFromOpaqueHandle(int handle) => {class_name}._(handle);
+  
+  // SSE encode method (delegates to opaque handle)
+  void frbInternalSseEncode({{required bool move}}) {{
+    // Encoding is handled by the delegate system using frbOpaqueHandle
+  }}
+  
+  // Dispose the opaque handle when no longer needed
+  void dispose() {{
+    // Disposal is handled by the Rust side automatically
+  }}
+}}"#
+        ),
+        needs_freezed: false,
+        needs_json_serializable: false,
+    })
 }

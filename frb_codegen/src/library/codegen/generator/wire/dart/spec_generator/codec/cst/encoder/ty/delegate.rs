@@ -132,9 +132,11 @@ impl WireDartCodecCstGeneratorEncoderTrait for DelegateWireDartCodecCstGenerator
                 self.mir.get_delegate().safe_ident(),
                 generate_stream_sink_setup_and_serialize(mir, "raw")
             ))),
-            MirTypeDelegate::ActorRef(_) => Acc::distribute(Some(
-                "return cst_encode_String(raw.id.toBytes());".to_string(),
-            )),
+            MirTypeDelegate::ActorRef(mir) => Acc::distribute(Some(format!(
+                "// ignore: invalid_use_of_internal_member
+                return (raw as {}Impl).frbInternalCstEncode();",
+                format!("ActorRef{}", mir.inner.safe_ident())
+            ))),
             MirTypeDelegate::BigPrimitive(_) => Acc::distribute(Some(
                 "return cst_encode_String(raw.toString());".to_string(),
             )),

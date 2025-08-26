@@ -43,7 +43,10 @@ impl CodecSseTyTrait for DelegateCodecSseTy<'_> {
                 MirTypeDelegate::StreamSink(mir) => {
                     generate_stream_sink_setup_and_serialize(mir, "self")
                 }
-                MirTypeDelegate::ActorRef(_) => "self.id.toBytes()".to_owned(),
+                MirTypeDelegate::ActorRef(_) => {
+                    // ActorRef uses opaque handle encoding - convert int to BigInt for SSE
+                    "BigInt.from(self.frbOpaqueHandle)".to_owned()
+                }
                 MirTypeDelegate::BigPrimitive(_) => "self.toString()".to_owned(),
                 MirTypeDelegate::CastedPrimitive(mir) => {
                     let postfix = match mir.inner {
@@ -105,7 +108,15 @@ impl CodecSseTyTrait for DelegateCodecSseTy<'_> {
                 },
                 MirTypeDelegate::Uuid => "self.as_bytes().to_vec()".to_owned(),
                 MirTypeDelegate::StreamSink(_) => return Some(lang.throw_unimplemented("")),
-                MirTypeDelegate::ActorRef(_) => "self.id().as_bytes().to_vec()".to_owned(),
+                MirTypeDelegate::ActorRef(_) => {
+                    match lang {
+                        Lang::DartLang(_) => "frbOpaqueHandle".to_owned(),
+                        Lang::RustLang(_) => {
+                            "flutter_rust_bridge::for_generated::rust_auto_opaque_encode(self)"
+                                .to_owned()
+                        }
+                    }
+                }
                 MirTypeDelegate::BigPrimitive(_) => "self.to_string()".to_owned(),
                 MirTypeDelegate::RustAutoOpaqueExplicit(_ir) => {
                     "flutter_rust_bridge::for_generated::rust_auto_opaque_explicit_encode(self)"
@@ -170,7 +181,12 @@ impl CodecSseTyTrait for DelegateCodecSseTy<'_> {
                         }
                     },
                     MirTypeDelegate::Uuid => "UuidValue.fromByteList(inner)".to_owned(),
-                    MirTypeDelegate::ActorRef(_) => "ActorRef.fromId(UuidValue.fromByteList(inner))".to_owned(),
+                    MirTypeDelegate::ActorRef(mir) => {
+                        format!(
+                            "ActorRef<{}>.fromOpaqueHandle(inner.toInt())",
+                            ApiDartGenerator::new(*mir.inner.clone(), self.context.as_api_dart_context()).dart_api_type()
+                        )
+                    }
                     MirTypeDelegate::StreamSink(_)
                     | MirTypeDelegate::ProxyVariant(_)
                     | MirTypeDelegate::ProxyEnum(_) => {
@@ -223,7 +239,7 @@ impl CodecSseTyTrait for DelegateCodecSseTy<'_> {
                     r#"uuid::Uuid::from_slice(&inner).expect("fail to decode uuid")"#.to_owned()
                 }
                 MirTypeDelegate::ActorRef(_) => {
-                    r#"theta::actor_ref::ActorRef::from_id(uuid::Uuid::from_slice(&inner).expect("fail to decode uuid"))"#.to_owned()
+                    "flutter_rust_bridge::for_generated::rust_auto_opaque_decode_owned(sse_decode_usize(deserializer))".to_owned()
                 }
                 MirTypeDelegate::StreamSink(_) => "StreamSink::deserialize(inner)".to_owned(),
                 MirTypeDelegate::BigPrimitive(_) => "inner.parse().unwrap()".to_owned(),

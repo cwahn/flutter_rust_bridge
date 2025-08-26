@@ -6,3 +6,5 @@ environment:
 dev_dependencies:
   melos: ^6.0.0
   lints: any
+dependencies:
+  flutter_rust_bridge: 2.11.1

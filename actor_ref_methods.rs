@@ -11,6 +11,7 @@ The key difference from flt_actor macro:
 
 #[cfg(feature = "theta")]
 use theta::actor_ref::ActorRef;
+use std::mem;
 
 /// Get the unique identifier of this actor reference
 /// This will be generated as: `Uuid get id => ...`
@@ -68,4 +69,16 @@ where
     // This is a placeholder - in real usage, this would set up monitoring
     // and forward state updates to the StreamSink
     Err(anyhow::anyhow!("ActorRef::initStream not yet implemented - needs theta_frb integration"))
+}
+
+/// Encode ActorRef as raw pointer for FRB opaque type system
+/// This method converts the ActorRef to a (usize, i32) tuple for wire transfer
+/// Following the same pattern as RustOpaque::sse_encode_raw()
+#[cfg(feature = "theta")]
+pub fn actor_ref_sse_encode_raw<T>(actor_ref: ActorRef<T>) -> (usize, i32) {
+    // Convert ActorRef to boxed pointer, similar to RustOpaque pattern
+    let boxed = Box::new(actor_ref);
+    let ptr = Box::into_raw(boxed) as usize;
+    let size = mem::size_of::<ActorRef<T>>() as i32;
+    (ptr, size)
 }

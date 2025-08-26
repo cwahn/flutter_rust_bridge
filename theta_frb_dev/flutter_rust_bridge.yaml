@@ -1,0 +1,7 @@
+rust_input: crate::api
+rust_root: rust/
+dart_output: lib/src/rust
+dart_preamble: |
+  export 'package:a9_ui/a9_ui.dart';
+  export 'package:uuid/uuid_value.dart';
+  export 'package:flutter_rust_bridge/src/actor_ref.dart';

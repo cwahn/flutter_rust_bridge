@@ -1,0 +1,30 @@
+[package]
+name = "rust_lib_theta_frb_dev"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+# Empty workspace to isolate from parent workspace
+
+[lib]
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+flutter_rust_bridge = { features = ["uuid"], version = "=2.11.1" }
+theta = "0.1.0-alpha.13"
+serde = { version = "1.0.219", features = ["derive"] }
+rustc-hash = "2.1.1"
+tokio = { version = "1.47.1", features = [
+    "macros",
+    "sync",
+    "time",
+    "rt-multi-thread",
+] }
+tracing = "0.1.41"
+anyhow = "1.0.99"
+tracing-subscriber = { version = "0.3.19", features = ["chrono", "env-filter"] }
+iroh = "0.91.2"
+uuid = "1.18.0"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(frb_expand)'] }

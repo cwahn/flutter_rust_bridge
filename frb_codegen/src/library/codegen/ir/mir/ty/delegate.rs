@@ -1,5 +1,7 @@
 use crate::codegen::generator::codec::structs::CodecMode;
 use crate::codegen::ir::mir::custom_ser_des::MirCustomSerDes;
+use crate::codegen::ir::mir::func::OwnershipMode;
+use crate::codegen::ir::mir::llfetime_aware_type::MirLifetimeAwareType;
 use crate::codegen::ir::mir::ty::enumeration::{MirEnumIdent, MirTypeEnumRef};
 use crate::codegen::ir::mir::ty::general_list::{mir_list, MirTypeGeneralList};
 use crate::codegen::ir::mir::ty::primitive::MirTypePrimitive;
@@ -8,7 +10,7 @@ use crate::codegen::ir::mir::ty::record::MirTypeRecord;
 use crate::codegen::ir::mir::ty::rust_auto_opaque_implicit::{
     MirRustAutoOpaqueRaw, MirTypeRustAutoOpaqueImplicit,
 };
-use crate::codegen::ir::mir::ty::rust_opaque::MirTypeRustOpaque;
+use crate::codegen::ir::mir::ty::rust_opaque::{MirRustOpaqueInner, MirTypeRustOpaque, RustOpaqueCodecMode};
 use crate::codegen::ir::mir::ty::{MirContext, MirType, MirTypeTrait};
 use crate::utils::namespace::{Namespace, NamespacedName};
 
@@ -396,7 +398,7 @@ impl MirTypeDelegate {
             }
             MirTypeDelegate::Set(mir) => mir_list(*mir.inner.to_owned(), true),
             MirTypeDelegate::StreamSink(_) => MirType::Delegate(MirTypeDelegate::String),
-            MirTypeDelegate::ActorRef(_) => MirType::Delegate(MirTypeDelegate::String),
+            MirTypeDelegate::ActorRef(_) => MirType::Primitive(MirTypePrimitive::Usize),
             MirTypeDelegate::BigPrimitive(_) => MirType::Delegate(MirTypeDelegate::String),
             MirTypeDelegate::CastedPrimitive(mir) => MirType::Primitive(mir.inner.clone()),
             MirTypeDelegate::RustAutoOpaqueExplicit(mir) => MirType::RustOpaque(mir.inner.clone()),

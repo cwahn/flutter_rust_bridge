@@ -85,10 +85,10 @@ impl ApiDartGeneratorInfoTrait for DelegateApiDartGenerator<'_> {
                 "RustStreamSink<{}>",
                 ApiDartGenerator::new(*mir.inner_ok.clone(), self.context).dart_api_type(),
             ),
-            MirTypeDelegate::ActorRef(mir) => format!(
-                "ActorRef<{}>",
-                ApiDartGenerator::new(*mir.inner.clone(), self.context).dart_api_type(),
-            ),
+            MirTypeDelegate::ActorRef(mir) => {
+                format!("ActorRef<{}>", 
+                    ApiDartGenerator::new(*mir.inner.clone(), self.context).dart_api_type())
+            }
             MirTypeDelegate::BigPrimitive(_) => "BigInt".to_owned(),
             MirTypeDelegate::CastedPrimitive(mir) => match mir.inner {
                 MirTypePrimitive::U64

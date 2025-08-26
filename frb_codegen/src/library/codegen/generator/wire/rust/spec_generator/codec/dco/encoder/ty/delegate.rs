@@ -52,6 +52,10 @@ impl WireRustCodecDcoGeneratorEncoderTrait for DelegateWireRustCodecDcoGenerator
                         + &generate_impl_into_into_dart(&name, &Some(wrapper_name.clone())),
                 )
             }
+            MirTypeDelegate::ActorRef(_) => {
+                // ActorRef uses opaque encoding to preserve runtime state
+                None // Use default opaque handling
+            }
             _ => None,
         }
     }

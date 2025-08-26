@@ -1,0 +1,28 @@
+PODS:
+  - display_metrics_macos (1.1.0):
+    - FlutterMacOS
+  - FlutterMacOS (1.0.0)
+  - rust_lib_theta_frb_dev (0.0.1):
+    - FlutterMacOS
+
+DEPENDENCIES:
+  - display_metrics_macos (from `Flutter/ephemeral/.symlinks/plugins/display_metrics_macos/macos`)
+  - FlutterMacOS (from `Flutter/ephemeral`)
+  - rust_lib_theta_frb_dev (from `Flutter/ephemeral/.symlinks/plugins/rust_lib_theta_frb_dev/macos`)
+
+EXTERNAL SOURCES:
+  display_metrics_macos:
+    :path: Flutter/ephemeral/.symlinks/plugins/display_metrics_macos/macos
+  FlutterMacOS:
+    :path: Flutter/ephemeral
+  rust_lib_theta_frb_dev:
+    :path: Flutter/ephemeral/.symlinks/plugins/rust_lib_theta_frb_dev/macos
+
+SPEC CHECKSUMS:
+  display_metrics_macos: 06eace1703bd23339badde48e47916ee07855136
+  FlutterMacOS: 8f6f14fa908a6fb3fba0cd85dbd81ec4b251fb24
+  rust_lib_theta_frb_dev: 0790588c45079c7bfd8395c995d6b2425d331b87
+
+PODFILE CHECKSUM: 7eb978b976557c8c1cd717d8185ec483fd090a82
+
+COCOAPODS: 1.16.2
